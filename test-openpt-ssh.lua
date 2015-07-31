@@ -2,22 +2,21 @@ local global=require"process.globals"
 local posix=require"posix"
 
 local function spawn(this,...)
-	--local master,reason=assert(posix.openpt(bit32.bor(posix.O_RDWR,posix.O_NOCTTY)))
-	local master,reason=assert(posix.openpt(bit32.bor(posix.O_RDWR)))
+	local master,reason=assert(posix.openpt(bit32.bor(posix.O_RDWR,posix.O_NOCTTY)))
 	local ok,reason=assert(posix.grantpt(master))
 	local ok,reason=assert(posix.unlockpt(master))
 	local slave_name,reason=assert(posix.ptsname(master))
-	local slave, reason = assert(posix.open (slave_name,posix.O_RDWR))
 	local pid,reason=assert(posix.fork())
 	if pid==0 then
-		--posix.close(master)
+		posix.close(master)
+		local session=posix.setpid('s') -- setsid()...
+		local slave, reason = assert(posix.open (slave_name,posix.O_RDWR))
 		local termios,errmasg=assert(posix.tcgetattr(slave))
 		termios.lflag=bit32.band(termios.lflag,bit32.bnot(posix.ECHO))
 		assert(posix.tcsetattr(slave,posix.TCSANOW,termios))
 		posix.dup2(slave,0)
 		posix.dup2(slave,1)
 		posix.dup2(slave,2)
-		local session=posix.setpid('s') -- setsid()...
 		--for i = 3,1023 do
 			--posix.close(i)
 		--end
@@ -34,7 +33,7 @@ local function spawn(this,...)
 end
 
 local function testfunction(destination)
-	posix.exec("/usr/bin/ssh",destination)
+	posix.exec("/usr/bin/ssh",destination,"ip","a","ls")
 	return 0
 end
 
@@ -43,12 +42,16 @@ local fds={
 	[master]= { events={IN=true} , outfd=1},
 	[0]= { events={IN=true}, outfd=master },
 }
+local loggedin=false
 while true do
 	posix.poll(fds,-1)
 	for fd in pairs(fds) do
 		if fds[fd].revents and fds[fd].revents.IN then
 			local b=posix.read(fd,1024)
-			-- print("got",b)
+			--print("got",fd,b)
+			if not loggedin  and b:match("assword:") then
+				posix.write(fd,arg[2].."\n")	
+			end
 			posix.write(fds[fd].outfd,b or "")
 			fds[fd].revents.IN=nil
 		end
