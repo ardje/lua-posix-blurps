@@ -82,7 +82,10 @@ function askforpass()
 end
 
 --askforpass()
-exitcode=0
+local exitcode=0
+function exit(n)
+	exitcode=n)
+end
 function err(...)
 	stderr:write(...)
 end
