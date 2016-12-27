@@ -91,18 +91,21 @@ function err(...)
 end
 function out(...)
 	stdout:write(...)
+	stdout:flush()
 end
 function sleep(...)
 	cqueues.sleep(...)
 end
 local function main(arg)
 	local noargs={[[
-		print"Meeh"
 		err("debug1: testing testing 1 2 3 in the place to be\n")
 		-- Thinking... why can't I log in...
-		sleep(2.400)
+		sleep(1.400)
 		local p=askforpass()
 		err("I got that pass "..p.."\n")
+		out("Ocassionally I say somethin on stdout\n")
+		sleep(2.400)
+		out("after long thinking I decided to stop with exit 2\n")
 		exit(2)
 	]] }
 	local performthis=assert(load(table.concat(#arg == 0 and noargs or arg," ")),nil,"t")
