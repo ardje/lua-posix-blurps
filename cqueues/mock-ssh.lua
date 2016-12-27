@@ -84,7 +84,7 @@ end
 --askforpass()
 local exitcode=0
 function exit(n)
-	exitcode=n)
+	exitcode=n
 end
 function err(...)
 	stderr:write(...)
@@ -92,14 +92,20 @@ end
 function out(...)
 	stdout:write(...)
 end
-sleep=cqueues.sleep
+function sleep(...)
+	cqueues.sleep(...)
+end
 local function main(arg)
-	--stderr:write("debug1: testing testing 1 2 3 in the place to be\n")
-	-- Thinking... why can't I log in...
-	--cqueues.sleep(1.400)
-	--local p=askforpass()
-	--stderr:write("I got that pass "..p.."\n")
-	local performthis=assert(load(table.concat(arg," ")),nil,"t")
+	local noargs={[[
+		print"Meeh"
+		err("debug1: testing testing 1 2 3 in the place to be\n")
+		-- Thinking... why can't I log in...
+		sleep(2.400)
+		local p=askforpass()
+		err("I got that pass "..p.."\n")
+		exit(2)
+	]] }
+	local performthis=assert(load(table.concat(#arg == 0 and noargs or arg," ")),nil,"t")
 	performthis()
 	return 1
 end

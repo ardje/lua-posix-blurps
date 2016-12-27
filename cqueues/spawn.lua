@@ -15,7 +15,8 @@ function M.cloexec(fd,on)
     else
       flags=oflags&(~CLO_EXEC)
     end
-  local r=posix.fcntl(fd,posix.F_SETFD,flags)
+    local r=posix.fcntl(fd,posix.F_SETFD,flags)
+  end
 end
 
 
