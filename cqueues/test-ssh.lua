@@ -18,9 +18,7 @@ signal.ignore(signal.SIGTERM, signal.SIGHUP, signal.SIGINT)
 
 
 local fd,pid=spawn.spawn(posix.exec,{},"./mock-ssh.lua",[[
-sleep(10)
-for i in 1,10 do out("meeh",i,"\n") end 
-exit(1)
+sleep(2) for i = 1,10 do out("meeh",i,"\n") end exit(1)
 ]])
 local function sockerror(socket, method, error,level)
 print(method,error,level)
@@ -35,4 +33,6 @@ print("poep")
 for b in sock:lines() do
 	print("X",b,"X")
 end
-print("plas")
+print("Start some sleep in main")
+cqueues.sleep(2)
+print("End of main")
