@@ -28,7 +28,6 @@ function M.spawn(this,fdlist,...)
 	local slave_name,reason=assert(posix.ptsname(master))
 	print("about to fork",...)
 	local pid,reason=assert(posix.fork())
-	local slave2=1
 --	pss.setsockopt( master,pss.SOL_SOCKET,pss.SO_NOSIGPIPE)
 	--local slave2, reason = assert(posix.open (slave_name,bit32.bor(posix.O_RDWR,posix.O_NOCTTY)))
 	if pid==0 then
@@ -45,8 +44,19 @@ function M.spawn(this,fdlist,...)
 		for fd,dup in pairs(fdlist) do
 			posix.dup2(dup,fd)
 		end
-		for i = 3,1023 do
-			posix.close(i)
+		for fdk,fdv in pairs(fdlist) do
+			if fdlist[fdv] == nil then
+				print("closing:",fdv)
+				posix.close(fdv)
+			end	
+		end
+		for i = 0,1023 do
+			if fdlist[i] == nil then
+				local r=posix.close(i)
+				if r == 0 then
+					print("filedescriptor was open:",i)
+				end
+			end
 		end
 		--print("session:",session,posix.ctermid())
 		print(...)
@@ -60,7 +70,7 @@ function M.spawn(this,fdlist,...)
 	--posix.close(slave)
 	print("after fork")
 	--posix.fcntl(master,posix.F_SETFL,posix.O_NONBLOCK)
-	return master,slave2,pid
+	return master,pid
 end
 
 return M
