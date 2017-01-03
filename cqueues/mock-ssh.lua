@@ -33,20 +33,13 @@ local cs=require"cqueues.socket"
 local aux=require"cqueues.auxlib"
 local cq=cqueues.new()
 
-local function cqhandle(fd,closeit)
-	local cqfd=aux.assert(cs.dup(fd))
-	if closeit then
-		posix.close(fd)
-	end
-	return cqfd
-end
 --[[
 	Handover stdin/err/out to cqueues
 	They might as well be sockets, as
 ]]
-local stdin=cqhandle(0,true)
-local stdout=cqhandle(1,false)
-local stderr=cqhandle(2,false) -- Needed to trap errors
+local stdin=cs.fdopen(0)
+local stdout=cs.fdopen(1)
+local stderr=cs.fdopen(2)
 
 function askforpass()
 	--[[
