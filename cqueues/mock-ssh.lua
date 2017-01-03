@@ -21,7 +21,6 @@ end
 --[[
   cqueues seems to open internal handles, which we should not close.
   So close all necessary descriptors before loading cqueues.
-  
 ]]
 closeall()
 
@@ -32,7 +31,6 @@ local cs=require"cqueues.socket"
   I whish there was a thing like cs.assimilate( ) ;-) .
 ]]
 local aux=require"cqueues.auxlib"
-local signal=require"cqueues.signal"
 local cq=cqueues.new()
 
 local function cqhandle(fd,closeit)
@@ -44,7 +42,7 @@ local function cqhandle(fd,closeit)
 end
 --[[
 	Handover stdin/err/out to cqueues
-	They might as well be sockets, as 
+	They might as well be sockets, as
 ]]
 local stdin=cqhandle(0,true)
 local stdout=cqhandle(1,false)
@@ -55,10 +53,11 @@ function askforpass()
 		Open straight channel to end user to enter password
 	]]
 	local fd,reason=aux.assert(posix.open ("/dev/tty", posix.O_RDWR))
+	local pty=aux.assert(cs.fdopen(fd))
 	--[[
 		turn off echo
 	]]
-	local termios,errmasg=assert(posix.tcgetattr(fd))
+	local termios,errmasg=aux.assert(posix.tcgetattr(fd))
 	local oflag=termios.lflag
 	termios.lflag=bit32.band(termios.lflag,bit32.bnot(posix.ECHO))
 	aux.assert(posix.tcsetattr(fd,posix.TCSANOW,termios))
@@ -66,18 +65,18 @@ function askforpass()
 	--[[
 		Handover to cqueues
 	]]
-	local pty=cqhandle(fd)
 	pty:write("I pretended trying to log in@now give me a's password: ")
+	pty:flush()
+	--aux.assert(posix.tcsetattr(fd,posix.TCSANOW,termios))
 	local pass=pty:read("*l")
-	aux.assert(posix.tcsetattr(fd,posix.TCSANOW,termios))
 	stderr:write("debug1: got pass ",pass,"\n")
-	pty:close()
-	stderr:write("debug1: closed stuff\n")
 	--[[
 		Restore echo settings
 	]]
-	assert(posix.tcsetattr(fd,posix.TCSANOW,termios))
-	posix.close(fd)
+	aux.assert(posix.tcsetattr(fd,posix.TCSANOW,termios))
+	pty:close()
+	--posix.close(fd)
+	stderr:write("debug1: closed stuff\n")
 	return pass
 end
 
@@ -88,6 +87,9 @@ function exit(n)
 end
 function err(...)
 	stderr:write(...)
+end
+function input(...)
+	stdin:read(...)
 end
 function out(...)
 	stdout:write(...)
@@ -108,11 +110,12 @@ local function main(arg)
 		out("after long thinking I decided to stop with exit 2\n")
 		exit(2)
 	]] }
+	print("performing :",(table.concat(#arg == 0 and noargs or arg," ")))
 	local performthis=assert(load(table.concat(#arg == 0 and noargs or arg," ")),nil,"t")
 	performthis()
-	return 1
+	return
 end
 
 cq:wrap(function () return main(arg) end)
-cq:loop()
+aux.assert(cq:loop())
 os.exit(exitcode)
