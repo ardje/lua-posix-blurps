@@ -19,8 +19,9 @@ local function closeall()
 	for i=3,1023 do posix.close(i) end
 end
 --[[
-  cqueues seems to open internal handles, which we should not close.
-  So close all necessary descriptors before loading cqueues.
+  cqueues uses filehandles, which we should never close.
+  (I spotted 3 of them: pollfd, signalfd, and some other fd)
+  So close all unnecessary descriptors before loading cqueues.
 ]]
 closeall()
 
