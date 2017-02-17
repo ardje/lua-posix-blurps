@@ -1,8 +1,8 @@
 --local global=require"globals"
 local M={}
 local posix=require"posix"
-local pss=require"posix.sys.socket"
-local cs=require"cqueues.socket"
+--local pss=require"posix.sys.socket"
+--local cs=require"cqueues.socket"
 
 -- local fdnull=assert(posix.open("/dev/null",posix.O_RDWR,""))
 function M.cloexec(fd,on)
