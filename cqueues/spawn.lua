@@ -21,23 +21,22 @@ end
 
 
 function M.spawn(this,fdlist,...)
-	local master,reason=assert(posix.openpt(bit32.bor(posix.O_RDWR,posix.O_NOCTTY)))
 	fdlist=fdlist or {}
-	local ok,reason=assert(posix.grantpt(master))
-	local ok,reason=assert(posix.unlockpt(master))
-	local slave_name,reason=assert(posix.ptsname(master))
-	print("about to fork",...)
+	local master=assert(posix.openpt(bit32.bor(posix.O_RDWR,posix.O_NOCTTY)))
+	assert(posix.grantpt(master))
+	assert(posix.unlockpt(master))
 	local pid,reason=assert(posix.fork())
---	pss.setsockopt( master,pss.SOL_SOCKET,pss.SO_NOSIGPIPE)
-	--local slave2, reason = assert(posix.open (slave_name,bit32.bor(posix.O_RDWR,posix.O_NOCTTY)))
 	if pid==0 then
+		local slave_name=assert(posix.ptsname(master))
 		posix.close(master)
 		local session=posix.setpid('s') -- setsid()...
-		local slave, reason = assert(posix.open (slave_name,posix.O_RDWR))
-		local termios,errmasg=assert(posix.tcgetattr(slave))
+		--[[
+			We have to open the slave tty now at least once to make it our CTTY.
+		]]
+		slave = assert(posix.open (slave_name,posix.O_RDWR))
+		local termios,errmsg=assert(posix.tcgetattr(slave))
 		termios.lflag=bit32.band(termios.lflag,bit32.bnot(posix.ECHO))
 		assert(posix.tcsetattr(slave,posix.TCSANOW,termios))
-		print("dupping")
 		fdlist[0]=fdlist[0] or slave
 		fdlist[1]=fdlist[1] or slave
 		fdlist[2]=fdlist[2] or slave
